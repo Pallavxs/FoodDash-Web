@@ -4,6 +4,20 @@ import restaurantService from "../../services/restaurantService";
 /**
  * Async thunk to fetch all restaurants with optional pagination.
  */
+export const createRestaurant = createAsyncThunk(
+  "restaurants/create",
+  async (params, { rejectWithValue }) => {
+    try {
+      const data = await restaurantService.createRestaurant(params);
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to create restaurant"
+      );
+    }
+  }
+)
+
 export const fetchRestaurants = createAsyncThunk(
   "restaurants/fetchRestaurants",
   async (params, { rejectWithValue }) => {

@@ -1,135 +1,142 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { User, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import AuthCard from '../../components/auth/AuthCard';
 import AuthHeader from '../../components/auth/AuthHeader';
 import AccountTypeSelector from '../../components/auth/AccountTypeSelector';
-import AuthInput from '../../components/auth/AuthInput';
-import PasswordInput from '../../components/auth/PasswordInput';
-import AuthButton from '../../components/auth/AuthButton';
-import AuthFooter from '../../components/auth/AuthFooter';
-import { useDispatch, useSelector } from 'react-redux';
-import { clearError, registerUser } from '../../redux/slice/authSlice';
 
-export default function Register({ onToggleMode, onSuccess }) {
+export default function Register() {
+  const navigate = useNavigate();
   const [role, setRole] = useState('customer');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [validationError, setValidationError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const { loading, error } = useSelector((state) => state.auth);
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setValidationError('');
-
-    if (password !== confirmPassword) {
-      setValidationError('Passwords do not match');
-      return;
-    }
-
-    try {
-      const data = await dispatch(registerUser({
-        name,
-        email,
-        password,
-        role,
-      })).unwrap();
-
-      if (onSuccess && data?.user) {
-        onSuccess(data.user);
-      }
-      navigate('/login');
-    } catch (err) {
-      console.error('Registration error:', err);
+    // UI prototype: navigate to login or dashboard
+    if (role === 'vendor') {
+      navigate('/vendor');
+    } else {
+      navigate('/dashboard');
     }
   };
-
-  const handleInputChange = (setter) => (e) => {
-    setter(e.target.value);
-    if (validationError) setValidationError('');
-    if (error) {
-      dispatch(clearError());
-    }
-  };
-
-  const displayError = validationError || error;
 
   return (
     <AuthCard mode="register">
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-[0_4px_14px_rgba(229,43,35,0.3)]">
+          <span className="text-base leading-none">⚡</span>
+        </div>
+        <span className="font-heading text-xl font-extrabold tracking-tight text-fooddash-charcoal">
+          Food<span className="text-primary">Dash</span>
+        </span>
+      </div>
+
       <AuthHeader mode="register" />
 
+      {/* Role Selection UI */}
       <AccountTypeSelector role={role} onChangeRole={setRole} />
 
-      {displayError && (
-        <div
-          className="flex items-center gap-2 p-3 rounded-input text-xs sm:text-sm font-medium mb-4 bg-red-50 border border-red-200 text-red-700 animate-fadeIn"
-          role="alert"
-        >
-          <span>⚠️</span>
-          <span>{displayError}</span>
+      <form onSubmit={handleSubmit} className="flex flex-col w-full space-y-3.5">
+        {/* Name Field */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-fooddash-charcoal mb-1">
+            Full Name
+          </label>
+          <div className="relative">
+            <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fooddash-muted" />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Alex Morgan"
+              className="w-full h-11 pl-11 pr-4 rounded-input border border-fooddash-border bg-fooddash-cream/40 text-sm font-medium text-fooddash-charcoal outline-none focus:border-primary focus:bg-white transition-all"
+              required
+            />
+          </div>
         </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col w-full">
-        <AuthInput
-          label="Full Name"
-          id="register-name"
-          type="text"
-          placeholder="e.g. Alex Morgan"
-          value={name}
-          onChange={handleInputChange(setName)}
-          icon={User}
-          autoComplete="name"
-          required
-        />
+        {/* Email Field */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-fooddash-charcoal mb-1">
+            Email Address
+          </label>
+          <div className="relative">
+            <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fooddash-muted" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. alex@fooddash.com"
+              className="w-full h-11 pl-11 pr-4 rounded-input border border-fooddash-border bg-fooddash-cream/40 text-sm font-medium text-fooddash-charcoal outline-none focus:border-primary focus:bg-white transition-all"
+              required
+            />
+          </div>
+        </div>
 
-        <AuthInput
-          label="Email Address"
-          id="register-email"
-          type="email"
-          placeholder="e.g. alex@fooddash.com"
-          value={email}
-          onChange={handleInputChange(setEmail)}
-          icon={Mail}
-          autoComplete="email"
-          required
-        />
+        {/* Password */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-fooddash-charcoal mb-1">
+            Password
+          </label>
+          <div className="relative">
+            <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fooddash-muted" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters"
+              className="w-full h-11 pl-11 pr-11 rounded-input border border-fooddash-border bg-fooddash-cream/40 text-sm font-medium text-fooddash-charcoal outline-none focus:border-primary focus:bg-white transition-all"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-fooddash-muted hover:text-fooddash-charcoal cursor-pointer"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
 
-        <PasswordInput
-          label="Password"
-          id="register-password"
-          placeholder="At least 6 characters"
-          value={password}
-          onChange={handleInputChange(setPassword)}
-          icon={Lock}
-          autoComplete="new-password"
-          required
-        />
+        {/* Confirm Password */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-fooddash-charcoal mb-1">
+            Confirm Password
+          </label>
+          <div className="relative">
+            <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fooddash-muted" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter password"
+              className="w-full h-11 pl-11 pr-4 rounded-input border border-fooddash-border bg-fooddash-cream/40 text-sm font-medium text-fooddash-charcoal outline-none focus:border-primary focus:bg-white transition-all"
+              required
+            />
+          </div>
+        </div>
 
-        <PasswordInput
-          label="Confirm Password"
-          id="register-confirm-password"
-          placeholder="Repeat your password"
-          value={confirmPassword}
-          onChange={handleInputChange(setConfirmPassword)}
-          icon={ShieldCheck}
-          autoComplete="new-password"
-          required
-        />
-
-        <AuthButton loading={loading} disabled={loading}>
-          <span>{loading ? 'Creating account...' : 'Create Account'}</span>
-          {!loading && <ArrowRight size={18} />}
-        </AuthButton>
+        {/* Submit Button */}
+        <button
+          type="submit"
+          className="h-[50px] w-full mt-2 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-sm shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <span>Create {role === 'vendor' ? 'Kitchen Partner' : 'Foodie'} Account</span>
+          <ArrowRight size={18} />
+        </button>
       </form>
 
-      <AuthFooter mode="register" onToggleMode={onToggleMode} />
+      {/* Switch to Login */}
+      <div className="mt-5 pt-4 border-t border-[#E4DCD0] text-center text-xs text-fooddash-muted">
+        <span>Already have an account? </span>
+        <Link to="/login" className="font-bold text-primary hover:underline ml-1">
+          Sign In
+        </Link>
+      </div>
     </AuthCard>
   );
 }

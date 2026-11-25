@@ -15,7 +15,6 @@ export const restaurantService = {
    */
   getRestaurants: async (params = {}) => {
     const response = await api.get("/restaurants", { params });
-    // Backend returns { data: restaurants }
     return response.data?.data ?? response.data ?? [];
   },
 
@@ -41,6 +40,11 @@ export const restaurantService = {
     const response = await api.get(`/restaurants/${id}`);
     return response.data?.data ?? response.data;
   },
+
+  createRestaurant: async () => {
+    const response = await api.post(`/restraunts/`);
+    return response.data
+  }
 };
 
 export default restaurantService;
