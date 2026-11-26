@@ -15,10 +15,10 @@ import { authorizeRoles } from "../middleware/role.middleware.js";
 
 const router = express.Router();
 
+router.get("/my", authenticaUser, authorizeRoles("vendor", "admin"), getMyRestraunt)
 router.get("/search", searchRestaurants);
 router.get("/", getRestaurants);
 router.post("/create", authenticaUser, authorizeRoles("vendor", "admin"), upload.single("image"), validateRestaurant, createRestaurant);
-router.get("/my", authenticaUser, authorizeRoles("vendor", "admin"), getMyRestraunt)
 router.get("/:id", getRestaurantById);
 router.put("/:id", authenticaUser, authorizeRoles("vendor", "admin"), upload.single("image"), validateRestaurant, editRestaurant);
 router.delete("/:id", authenticaUser, authorizeRoles("vendor", "admin"), deleteRestaurant);

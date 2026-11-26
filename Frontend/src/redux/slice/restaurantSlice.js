@@ -2,14 +2,13 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import restaurantService from "../../services/restaurantService";
 
 /**
- * Async thunk to fetch all restaurants with optional pagination.
+ * Async thunk to create a new restaurant.
  */
 export const createRestaurant = createAsyncThunk(
   "restaurants/create",
-  async (params, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
-      const data = await restaurantService.createRestaurant(params);
-      return data;
+      return await restaurantService.createRestaurant(data);
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to create restaurant"
@@ -18,11 +17,14 @@ export const createRestaurant = createAsyncThunk(
   }
 )
 
+/**
+ * Async thunk to fetch all restaurants without pagination.
+ */
 export const fetchRestaurants = createAsyncThunk(
   "restaurants/fetchRestaurants",
-  async (params, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const data = await restaurantService.getRestaurants(params);
+      const data = await restaurantService.getRestaurants();
       return data;
     } catch (error) {
       return rejectWithValue(
@@ -70,8 +72,41 @@ export const fetchRestaurantById = createAsyncThunk(
   }
 );
 
+/**
+ * Async thunk to fetch vendor's own restaurants.
+ */
+export const getMyRestraunt = createAsyncThunk(
+  "restaurants/my",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await restaurantService.getMyRestraunt();
+      return Array.isArray(data) ? data : (data?.data ?? []);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch your restaurants"
+      );
+    }
+  }
+);
+
+export const editRestaurant = createAsyncThunk(
+  "restaurants/:id",
+  async (params, {rejectWithValue}) => {
+    try {
+      return await restaurantService.editRestaurant();
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to edit your restaurant"
+      )
+    }
+  }
+)
+
+export const fetchMyRestaurants = getMyRestraunt;
+
 const initialState = {
   restaurants: [],
+  myRestaurants: [],
   selectedRestaurant: null,
   loading: false,
   error: null,
@@ -136,6 +171,43 @@ const restaurantSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchRestaurantById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Create Restaurant 
+
+      .addCase(createRestaurant.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(createRestaurant.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedRestaurant = action.payload;
+        state.error = null;
+      })
+
+      .addCase(createRestaurant.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Get My Restaurant
+      .addCase(getMyRestraunt.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getMyRestraunt.fulfilled, (state, action) => {
+        state.loading = false;
+        const list = Array.isArray(action.payload)
+          ? action.payload
+          : (action.payload?.data ?? []);
+        state.restaurants = list;
+        state.myRestaurants = list;
+        state.error = null;
+      })
+      .addCase(getMyRestraunt.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

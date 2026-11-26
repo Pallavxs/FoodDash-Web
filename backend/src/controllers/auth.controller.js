@@ -4,7 +4,7 @@ import config from "../config/config.js";
 import redis from "../config/redis.js";
 
 const authTokenResponse = async (user, res, message) => {
-  const token = jwt.sign(
+  const accessToken = jwt.sign(
     {
       id: user._id,
       role: user.role,
@@ -13,11 +13,24 @@ const authTokenResponse = async (user, res, message) => {
     { expiresIn: "1 day" },
   );
 
-  res.cookie("token", token);
+  res.cookie("accessToken", accessToken);
+  res.cookie("token", accessToken);
+
+  const refreshToken = jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+    },
+    config.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.cookie("refreshToken", refreshToken);
 
   res.status(200).json({
     message,
-    token,
+    accessToken,
+    refreshToken,
     user: {
       id: user._id,
       name: user.name,
@@ -77,6 +90,7 @@ export async function getMe(req, res) {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    res.set("Cache-Control", "no-store");
     res.status(200).json({ user });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -85,13 +99,15 @@ export async function getMe(req, res) {
 
 export async function logout(req, res) {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken || req.cookies.token;
+
+    res.clearCookie("accessToken");
+    res.clearCookie("token");
+    res.clearCookie("refreshToken");
 
     if (!token) {
-      return res.status(400).json({ message: "No token provided" });
+      return res.status(200).json({ message: "Already logged out" });
     }
-
-    res.clearCookie("token");
 
     const tokenTtlSeconds = 60 * 60 * 24;
     await redis.set(token, "blacklisted", { EX: tokenTtlSeconds });
@@ -101,5 +117,52 @@ export async function logout(req, res) {
     return res
       .status(500)
       .json({ message: "Server error", error: error.message });
+  }
+}
+
+export async function refreshToken(req, res) {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token is required",
+      });
+    }
+
+    const decoded = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET || config.JWT_SECRET);
+
+    const user = await userModel.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const accessToken = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      config.JWT_SECRET,
+      { expiresIn: "1 day" }
+    );
+
+    res.cookie("accessToken", accessToken);
+    res.cookie("token", accessToken);
+
+    return res.status(200).json({
+      success: true,
+      message: "Access token refreshed successfully",
+      accessToken,
+    });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired refresh token",
+    });
   }
 }

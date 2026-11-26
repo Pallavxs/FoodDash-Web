@@ -1,9 +1,9 @@
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import {
   LayoutDashboard,
   Store,
+  UtensilsCrossed,
   PlusCircle,
   ShoppingBag,
   ArrowLeft,
@@ -14,11 +14,10 @@ import {
 
 /**
  * VendorSidebar Component
- * SaaS sidebar navigation for the FoodDash Vendor portal.
+ * SaaS sidebar navigation for the FoodDash Vendor portal (UI Only).
  */
-export default function VendorSidebar() {
+export default function VendorSidebar({ user = { name: 'Pallav Shrivastava', email: 'vendor@fooddash.com' } }) {
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth);
 
   const navLinkClass = ({ isActive }) =>
     `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
@@ -59,6 +58,11 @@ export default function VendorSidebar() {
           <NavLink to="/vendor/restaurants" end className={navLinkClass}>
             <Store size={18} />
             <span>My Restaurants</span>
+          </NavLink>
+
+          <NavLink to="/vendor/menu" className={navLinkClass}>
+            <UtensilsCrossed size={18} />
+            <span>Menu Management</span>
           </NavLink>
 
           <NavLink to="/vendor/restaurants/create" className={navLinkClass}>
@@ -104,7 +108,7 @@ export default function VendorSidebar() {
           </div>
           <div className="overflow-hidden">
             <div className="text-xs font-bold text-fooddash-charcoal truncate">{user?.name || 'Kitchen Partner'}</div>
-            <div className="text-[10px] text-fooddash-muted truncate">{user?.email || 'Vendor Account'}</div>
+            <div className="text-[10px] text-fooddash-muted truncate">{user?.email || 'vendor@fooddash.com'}</div>
           </div>
         </div>
 

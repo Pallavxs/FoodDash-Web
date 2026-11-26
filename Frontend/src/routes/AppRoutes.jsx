@@ -31,6 +31,7 @@ import EditRestaurant from '../pages/vendor/EditRestaurant';
 import AddFood from '../pages/vendor/AddFood';
 import EditFood from '../pages/vendor/EditFood';
 import VendorOrders from '../pages/vendor/VendorOrders';
+import MenuManagement from '../pages/vendor/MenuManagement';
 
 // Fallback Page
 import NotFound from '../pages/NotFound';
@@ -110,7 +111,6 @@ export default function AppRoutes() {
       {/* 12. My Orders Page */}
       <Route path="/orders" element={<Orders />} />
 
-
       {/* =========================================
           VENDOR PORTAL ROUTES (13 - 20)
           ========================================= */}
@@ -137,6 +137,11 @@ export default function AppRoutes() {
 
       {/* 20. Vendor Orders Page */}
       <Route path="/vendor/orders" element={<VendorOrders />} />
+
+      {/* 21. Menu Management Pages */}
+      <Route path="/vendor/menu" element={<MenuManagement />} />
+      <Route path="/vendor/menu/create" element={<AddFood />} />
+      <Route path="/vendor/restaurants/:id/menu" element={<MenuManagement />} />
 
 
       {/* =========================================

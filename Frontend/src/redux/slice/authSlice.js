@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import api from "../../services/api.js";
+import { authService } from '../../services/authService.js'
 
 // ==========================
 // LOGIN
@@ -11,9 +11,9 @@ export const loginUser = createAsyncThunk(
 
     async (userData, { rejectWithValue }) => {
         try {
-            const respone = await api.post("/auth/login", userData);
+            const respone = await authService.login(userData);
 
-            return respone.data
+            return respone
         } catch (error) {
             return rejectWithValue(
                 error.response?.data?.message || "Login Failed"
@@ -31,7 +31,7 @@ export const registerUser = createAsyncThunk(
 
     async (userData, { rejectWithValue }) => {
         try {
-            const response = await api.post("/auth/register", userData);
+            const response = await authService.register(userData);
 
             return response.data;
 
@@ -51,9 +51,9 @@ export const getMe = createAsyncThunk(
 
     async (_, { rejectWithValue }) => {
         try {
-            const respone = await api.get("/auth/get-me");
+            const respone = await authService.getCurrentUser();
 
-            return respone.data;
+            return respone;
         } catch (error) {
             return rejectWithValue(
                 error.response?.data?.message || "User not found")
@@ -70,7 +70,7 @@ export const logoutUser = createAsyncThunk(
 
     async (_, { rejectWithValue }) => {
         try {
-            const respone = await api.post("/auth/logout");
+            const respone = await authService.logout();
 
             return respone.data;
         } catch (error) {
@@ -80,8 +80,8 @@ export const logoutUser = createAsyncThunk(
     }
 )
 
-// export const getAllUser = createAsyncThunk(
-//     "/auth/getAll",
+// export const refreshToken = createAsyncThunk(
+//     "/auth/refreshToken",
 
 //     async (_, { rejectWithValue }) => {
 //         try {
@@ -205,29 +205,30 @@ const authSlice = createSlice({
                 state.error = action.payload;
             })
 
-            // ==========================
-            // getAllUser
-            // ==========================
+        // ==========================
+        // getAllUser
+        // ==========================
 
-            // .addCase(getAllUser.pending, (state) => {
-            //     state.loading = true;
-            //     state.error = null
-            // })
+        // .addCase(getAllUser.pending, (state) => {
+        //     state.loading = true;
+        //     state.error = null
+        // })
 
-            // .addCase(getAllUser.fulfilled, (state, action) => {
-            //     state.loading = false;
-            //     state.user = action.payload.users;
-            //     state.isAuthenticated = true;
-            //     state.error = null
-            // })
+        // .addCase(getAllUser.fulfilled, (state, action) => {
+        //     state.loading = false;
+        //     state.user = action.payload.users;
+        //     state.isAuthenticated = true;
+        //     state.error = null
+        // })
 
-            // .addCase(getAllUser.rejected, (state, action) => {
-            //     state.loading = false;
-            //     state.error = action.payload
-            // });
+        // .addCase(getAllUser.rejected, (state, action) => {
+        //     state.loading = false;
+        //     state.error = action.payload
+        // });
     }
 });
 
 export const { clearError } = authSlice.actions;
 
 export default authSlice.reducer;
+

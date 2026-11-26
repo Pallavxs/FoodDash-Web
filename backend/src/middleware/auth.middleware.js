@@ -3,16 +3,19 @@ import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 
 export async function authenticaUser(req, res, next) {
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken || req.cookies.token;
 
     if (!token) {
-        return res.status(401).json({ message: "No token provided" });
+        return res.status(401).json({ message: "No token provided. Please sign in." });
     }
 
     const isBlacklisted = await redis.get(token);
 
     if (isBlacklisted) {
-        return res.status(401).json({ message: "Token is blacklisted" });
+        res.clearCookie("accessToken");
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        return res.status(401).json({ message: "Session expired or logged out. Please sign in again." });
     }
 
     try {
@@ -22,6 +25,9 @@ export async function authenticaUser(req, res, next) {
         console.log('REQ USER:', req.user);
         return next();
     } catch (error) {
-        res.status(401).json({ message: "Invalid token" });
+        res.clearCookie("accessToken");
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        return res.status(401).json({ message: "Invalid or expired token. Please sign in." });
     }
 }

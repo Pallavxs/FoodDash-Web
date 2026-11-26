@@ -4,8 +4,16 @@ import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import AuthCard from '../../components/auth/AuthCard';
 import AuthHeader from '../../components/auth/AuthHeader';
 import AccountTypeSelector from '../../components/auth/AccountTypeSelector';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from '../../redux/slice/authSlice';
 
 export default function Login() {
+  const dispatch = useDispatch();
+
+  const { loading, error, user} = useSelector(
+    (state) => state.auth
+  )
+
   const navigate = useNavigate();
   const [role, setRole] = useState('customer');
   const [email, setEmail] = useState('');
@@ -13,12 +21,26 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (role === 'vendor') {
-      navigate('/vendor');
-    } else {
-      navigate('/dashboard');
+    
+    console.log("1. Form submitted");
+
+    const result = await dispatch(
+      loginUser({
+        email,
+        password
+      })
+    );
+
+    console.log(result)
+
+    if(loginUser.fulfilled.match(result)) {
+      if (role === 'vendor') {
+        navigate('/vendor');
+      } else {
+        navigate('/dashboard');
+      }
     }
   };
 
@@ -107,7 +129,9 @@ export default function Login() {
           type="submit"
           className="h-[50px] w-full mt-2 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-sm shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
-          <span>Sign In to FoodDash</span>
+          <span>
+            {loading ? 'Signing In...' : 'Sign In to FoodDash'}
+          </span>
           <ArrowRight size={18} />
         </button>
       </form>

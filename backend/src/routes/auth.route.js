@@ -1,6 +1,6 @@
 import Router from 'express'
 import { validateRegister, validateLogin } from '../validator/auth.validator.js';
-import { register, login, getMe, logout } from '../controllers/auth.controller.js';
+import { register, login, getMe, logout, refreshToken } from '../controllers/auth.controller.js';
 import { authenticaUser } from '../middleware/auth.middleware.js';
 
 const route = Router();
@@ -15,6 +15,8 @@ route.post('/register', validateRegister, register);
 route.post('/login', validateLogin , login);
 
 route.get('/get-me', authenticaUser , getMe);
+
+route.post('/refresh-token', refreshToken)
 
 route.post('/logout', authenticaUser, logout);
 

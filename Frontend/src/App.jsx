@@ -11,7 +11,6 @@ export default function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Rehydrate user authentication state from session cookie
     dispatch(getMe());
   }, [dispatch]);
 

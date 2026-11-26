@@ -3,14 +3,7 @@ import mongoose from "mongoose";
 
 export async function getRestaurants(req, res) {
   try {
-    
-    const { page = 1, limit = 20 } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const restaurants = await Restaurant.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+    const restaurants = await Restaurant.find().sort({ createdAt: -1 });
 
     res.status(200).json({ data: restaurants });
   } catch (error) {
@@ -69,21 +62,18 @@ export async function getRestaurantById(req, res) {
 export async function searchRestaurants(req, res) {
   try {
     // Accept query as `query` or `keyword` (fallback to `q` for legacy)
-    const { query, keyword, q, page = 1, limit = 20 } = req.query;
+    const { query, keyword, q } = req.query;
     const searchTerm = query || keyword || q;
     console.log('Search Query:', req.query);
     if (!searchTerm) {
       return res.status(400).json({ message: "Search term is required" });
     }
     const regex = new RegExp(searchTerm, "i");
-    const skip = (Number(page) - 1) * Number(limit);
 
     // Search only name and cuisine as per spec
     const restaurants = await Restaurant.find({
       $or: [{ name: regex }, { cuisine: regex }],
-    })
-      .skip(skip)
-      .limit(Number(limit));
+    }).sort({ createdAt: -1 });
     res.status(200).json({ data: restaurants });
   } catch (error) {
     console.error('Search error:', error);
@@ -93,7 +83,7 @@ export async function searchRestaurants(req, res) {
 
 export async function createRestaurant(req, res) {
   try {
-    const { name, cuisine, location, deliveryTime, rating } = req.body;
+    const { name, cuisine, location, deliveryTime, rating, Openinghours, description } = req.body;
 
     let imageUrl = "";
 
@@ -115,8 +105,10 @@ export async function createRestaurant(req, res) {
       name,
       cuisine,
       location,
+      Openinghours,
       image: imageUrl,
       deliveryTime,
+      description,
       rating,
     });
 
@@ -142,6 +134,8 @@ export async function editRestaurant(req, res) {
       cuisine,
       location,
       deliveryTime,
+      description,
+      Openinghours
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -177,6 +171,14 @@ export async function editRestaurant(req, res) {
 
     if (deliveryTime) {
       updateData.deliveryTime = deliveryTime;
+    }
+
+    if(description) {
+      updateData.description = description;
+    }
+
+    if (Openinghours) {
+      updateData.Openinghours = Openinghours;
     }
 
     if (req.file) {
