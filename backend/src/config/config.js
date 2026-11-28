@@ -18,13 +18,8 @@ if(!process.env.CLOUD_NAME || !process.env.CLOUD_API_KEY || !process.env.CLOUD_A
     console.error("Cloudinary configuration is not fully defined in environment variables");
 }
 
-if(!process.env.PORT) {
-    console.error("JWT_SECRET is not defined in environment variables");
-}
-
-
 const config = {
-    PORT: process.env.PORT,
+    PORT: process.env.PORT || 3001,
     MONGO_URI: process.env.MONGO_URI ,
     JWT_SECRET: process.env.JWT_SECRET, 
     REDIS_URL: process.env.REDIS_URL,
