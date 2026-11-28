@@ -17,11 +17,19 @@ export default function ForgotPassword() {
 
   return (
     <AuthCard mode="login">
-      <div className="mb-6 text-center">
-        <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-fooddash-charcoal mb-2">
+      <div className="flex items-center justify-center mb-2 select-none">
+        <Link to="/" className="inline-flex items-center group">
+          <span className="font-heading text-xl sm:text-2xl font-black tracking-tight text-fooddash-charcoal leading-none">
+            Food<span className="text-primary">Dash</span>
+          </span>
+        </Link>
+      </div>
+
+      <div className="mb-4 text-center">
+        <h1 className="font-heading text-xl sm:text-2xl font-extrabold text-fooddash-charcoal mb-1">
           Reset Your Password
         </h1>
-        <p className="text-sm text-fooddash-muted leading-relaxed max-w-[380px] mx-auto">
+        <p className="text-xs sm:text-[13px] text-fooddash-muted leading-relaxed max-w-[340px] mx-auto">
           Enter your registered email address and we'll send you recovery instructions to reset your password.
         </p>
       </div>

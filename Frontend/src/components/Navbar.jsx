@@ -55,15 +55,12 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#EAE5DC] shadow-[0_2px_10px_rgba(30,20,10,0.03)]">
       <div className="w-full max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[68px] flex items-center justify-between">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group select-none">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-[0_4px_14px_rgba(229,43,35,0.28)] group-hover:scale-105 transition-transform duration-200">
-            <span className="text-lg sm:text-xl leading-none text-white">⚡</span>
-          </div>
+        <Link to="/" className="flex items-center select-none group">
           <div className="flex flex-col">
-            <span className="font-heading text-xl sm:text-2xl font-extrabold tracking-tight text-fooddash-charcoal leading-none">
+            <span className="font-heading text-2xl sm:text-[1.75rem] font-black tracking-tight text-fooddash-charcoal leading-none">
               Food<span className="text-primary">Dash</span>
             </span>
-            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-fooddash-muted leading-none mt-0.5">
+            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-fooddash-muted leading-none mt-1">
               Artisan Delivery
             </span>
           </div>

@@ -39,11 +39,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 pb-9 border-b border-[#E4DCD0]">
           {/* Brand Info (Left Column: 2 cols on lg) */}
           <div className="lg:col-span-2 flex flex-col gap-3.5">
-            <Link to="/" className="flex items-center gap-2.5 w-fit group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-[0_4px_14px_rgba(229,43,35,0.28)] group-hover:scale-105 transition-transform duration-200">
-                <span className="text-lg leading-none text-white">⚡</span>
-              </div>
-              <span className="font-heading text-2xl font-extrabold tracking-tight text-fooddash-charcoal">
+            <Link to="/" className="inline-flex items-center w-fit select-none group">
+              <span className="font-heading text-2xl sm:text-[1.75rem] font-black tracking-tight text-fooddash-charcoal leading-none">
                 Food<span className="text-primary">Dash</span>
               </span>
             </Link>
