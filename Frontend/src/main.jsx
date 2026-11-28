@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import store from './redux/store.js';
 import {Provider} from 'react-redux';
+import "leaflet/dist/leaflet.css";
 import './index.css';
 
 class ErrorBoundary extends React.Component {

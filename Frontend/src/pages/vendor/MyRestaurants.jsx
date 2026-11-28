@@ -7,7 +7,7 @@ import VendorSidebar from '../../components/VendorSidebar';
 import PageHeader from '../../components/PageHeader';
 import EmptyState from '../../components/EmptyState';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
-import { getMyRestraunt } from '../../redux/slice/restaurantSlice';
+import { getMyRestraunt, deleteRestaurant } from '../../redux/slice/restaurantSlice';
 import {
   PlusCircle,
   Star,
@@ -18,7 +18,8 @@ import {
   Eye,
   Store,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 
 /**
@@ -37,9 +38,13 @@ export default function MyRestaurants() {
     dispatch(getMyRestraunt());
   }, [dispatch]);
 
-  const vendorRestaurants = Array.isArray(myRestaurants) && myRestaurants.length > 0
-    ? myRestaurants
-    : (Array.isArray(restaurants) ? restaurants : []);
+  const handleDelete = async (restaurantId, restaurantName) => {
+    if (window.confirm(`Are you sure you want to delete "${restaurantName}"? This will also remove all its menu items.`)) {
+      await dispatch(deleteRestaurant(restaurantId));
+    }
+  };
+
+  const vendorRestaurants = Array.isArray(myRestaurants) ? myRestaurants : [];
 
   return (
     <div className="min-h-screen flex flex-col bg-fooddash-cream text-fooddash-charcoal">
@@ -209,13 +214,24 @@ export default function MyRestaurants() {
                           </Link>
                         </div>
 
-                        <Link
-                          to={`/restaurants/${id}`}
-                          className="w-full h-10 px-3 rounded-xl bg-fooddash-charcoal hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs"
-                        >
-                          <Eye size={13} />
-                          <span>View Restaurant</span>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/restaurants/${id}`}
+                            className="flex-1 h-10 px-3 rounded-xl bg-fooddash-charcoal hover:bg-black text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                          >
+                            <Eye size={13} />
+                            <span>View Restaurant</span>
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(id, name)}
+                            className="h-10 px-3 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50 text-stone-400 hover:text-rose-600 flex items-center justify-center transition-all cursor-pointer"
+                            title="Delete Restaurant"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

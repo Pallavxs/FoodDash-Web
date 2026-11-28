@@ -6,6 +6,8 @@ import AuthLayout from '../layouts/AuthLayout';
 
 // Public / Customer Pages
 import Home from '../pages/Home';
+
+// Protected Pages
 import RestaurantDetails from '../pages/RestaurantDetails';
 import Cart from '../pages/Cart';
 import Checkout from '../pages/Checkout';
@@ -32,37 +34,69 @@ import AddFood from '../pages/vendor/AddFood';
 import EditFood from '../pages/vendor/EditFood';
 import VendorOrders from '../pages/vendor/VendorOrders';
 import MenuManagement from '../pages/vendor/MenuManagement';
+import VendorRoute from '../components/VendorRoute';
 
 // Fallback Page
 import NotFound from '../pages/NotFound';
+
+// Protected Route 
+
+import ProtectedRoute from './ProtectedRoute'
 
 /**
  * AppRoutes Component
  * Central route configuration for all 20 required FoodDash prototype routes.
  */
+
 export default function AppRoutes() {
   return (
     <Routes>
       {/* =========================================
           PUBLIC / CUSTOMER ROUTES (1 - 6)
           ========================================= */}
+
       {/* 1. Home Page */}
       <Route path="/" element={<Home />} />
 
       {/* 2. Restaurant Details Page */}
-      <Route path="/restaurants/:id" element={<RestaurantDetails />} />
+      <Route path="/restaurants/:id" element={
+        <ProtectedRoute>
+          <RestaurantDetails />
+        </ProtectedRoute>
+      } />
 
       {/* 3. Cart Page */}
-      <Route path="/cart" element={<Cart />} />
+      <Route path="/cart" element={
+        <ProtectedRoute>
+          <Cart />
+        </ProtectedRoute>  
+      } />
 
       {/* 4. Checkout Page */}
-      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/checkout" element={
+        <ProtectedRoute>
+          <Checkout />
+        </ProtectedRoute>
+      } />
 
       {/* 5. Order Success Page */}
-      <Route path="/order-success" element={<OrderSuccess />} />
+      <Route path="/order-success" element={
+        <ProtectedRoute>
+          <OrderSuccess />
+        </ProtectedRoute>
+      } />
+      <Route path="/order-success/:id" element={
+        <ProtectedRoute>
+          <OrderSuccess />
+        </ProtectedRoute>
+      } />
 
       {/* 6. Order Tracking / Details Page */}
-      <Route path="/orders/:id" element={<OrderTracking />} />
+      <Route path="/orders/:id" element={
+        <ProtectedRoute>
+          <OrderTracking />
+        </ProtectedRoute>
+      } />
 
 
       {/* =========================================
@@ -103,45 +137,59 @@ export default function AppRoutes() {
           USER / CUSTOMER DASHBOARD ROUTES (10 - 12)
           ========================================= */}
       {/* 10. Customer Dashboard */}
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+      }/>
 
       {/* 11. Profile Page */}
-      <Route path="/profile" element={<Profile />} />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
 
       {/* 12. My Orders Page */}
-      <Route path="/orders" element={<Orders />} />
+      <Route path="/orders" element={
+        <ProtectedRoute>
+          <Orders />
+        </ProtectedRoute>
+      } />
 
       {/* =========================================
-          VENDOR PORTAL ROUTES (13 - 20)
+          VENDOR PORTAL ROUTES (13 - 21)
           ========================================= */}
       {/* 13. Vendor Dashboard */}
-      <Route path="/vendor" element={<VendorDashboard />} />
+
+      <Route path="/vendor" element={<VendorRoute><VendorDashboard /></VendorRoute>} />
 
       {/* 14. My Restaurants Page */}
-      <Route path="/vendor/restaurants" element={<MyRestaurants />} />
+      <Route path="/vendor/restaurants" element={<VendorRoute><MyRestaurants /></VendorRoute>} />
 
       {/* 15. Create Restaurant Page */}
-      <Route path="/vendor/restaurants/create" element={<CreateRestaurant />} />
+      <Route path="/vendor/restaurants/create" element={<VendorRoute><CreateRestaurant /></VendorRoute>} />
 
       {/* 16. Manage Restaurant Page */}
-      <Route path="/vendor/restaurants/:id" element={<ManageRestaurant />} />
+      <Route path="/vendor/restaurants/:id" element={<VendorRoute><ManageRestaurant /></VendorRoute>} />
 
       {/* 17. Edit Restaurant Page */}
-      <Route path="/vendor/restaurants/:id/edit" element={<EditRestaurant />} />
+      <Route path="/vendor/restaurants/:id/edit" element={<VendorRoute><EditRestaurant /></VendorRoute>} />
 
       {/* 18. Add Food Page */}
-      <Route path="/vendor/restaurants/:id/menu/create" element={<AddFood />} />
+      <Route path="/vendor/restaurants/:id/menu/create" element={<VendorRoute><AddFood /></VendorRoute>} />
 
       {/* 19. Edit Food Page */}
-      <Route path="/vendor/restaurants/:restaurantId/menu/:id/edit" element={<EditFood />} />
+      <Route path="/vendor/restaurants/:restaurantId/menu/:id/edit" element={<VendorRoute><EditFood /></VendorRoute>} />
+      <Route path="/vendor/menu/:id/edit" element={<VendorRoute><EditFood /></VendorRoute>} />
 
       {/* 20. Vendor Orders Page */}
-      <Route path="/vendor/orders" element={<VendorOrders />} />
+      <Route path="/vendor/orders" element={<VendorRoute><VendorOrders /></VendorRoute>} />
 
       {/* 21. Menu Management Pages */}
-      <Route path="/vendor/menu" element={<MenuManagement />} />
-      <Route path="/vendor/menu/create" element={<AddFood />} />
-      <Route path="/vendor/restaurants/:id/menu" element={<MenuManagement />} />
+      <Route path="/vendor/menu" element={<VendorRoute><MenuManagement /></VendorRoute>} />
+      <Route path="/vendor/menu/create" element={<VendorRoute><AddFood /></VendorRoute>} />
+      <Route path="/vendor/restaurants/:id/menu" element={<VendorRoute><MenuManagement /></VendorRoute>} />
 
 
       {/* =========================================

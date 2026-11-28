@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import VendorSidebar from '../../components/VendorSidebar';
 import MenuItemCard from '../../components/MenuItemCard';
 import { getMyRestraunt } from '../../redux/slice/restaurantSlice';
+import { fetchMenuByRestaurant, deleteMenuItem } from '../../redux/slice/menuSlice';
 import {
   PlusCircle,
   Search,
@@ -19,29 +20,48 @@ import {
 
 /**
  * MenuManagement Component
- * Screen for managing dishes, categories, and availability per restaurant.
- * Consumes real restaurant data and displays clean empty states when dishes are empty.
+ * Screen for managing dishes, categories, and inventory for vendor kitchens.
+ * Connected directly to real backend restaurant and menu endpoints.
  */
 export default function MenuManagement() {
+  const { id: paramRestaurantId } = useParams();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { myRestaurants, restaurants, loading } = useSelector((state) => state.restaurants);
+  const { myRestaurants, restaurants, loading: restaurantsLoading } = useSelector((state) => state.restaurants);
+  const { items: menuItems = [], loading: menuLoading } = useSelector((state) => state.menu);
 
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState(paramRestaurantId || '');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     dispatch(getMyRestraunt());
   }, [dispatch]);
 
-  const vendorRestaurants = Array.isArray(myRestaurants) && myRestaurants.length > 0
-    ? myRestaurants
-    : (Array.isArray(restaurants) ? restaurants : []);
+  const vendorRestaurants = Array.isArray(myRestaurants) ? myRestaurants : [];
 
-  const activeRestaurant = vendorRestaurants[0] || null;
-  const currentRestaurantId = activeRestaurant?._id || activeRestaurant?.id || '';
+  // Sync selected restaurant ID
+  useEffect(() => {
+    if (!selectedRestaurantId && vendorRestaurants.length > 0) {
+      const firstId = vendorRestaurants[0]._id || vendorRestaurants[0].id;
+      setSelectedRestaurantId(firstId);
+    } else if (paramRestaurantId && paramRestaurantId !== selectedRestaurantId) {
+      setSelectedRestaurantId(paramRestaurantId);
+    }
+  }, [vendorRestaurants, paramRestaurantId, selectedRestaurantId]);
 
-  // Real dishes array from backend (empty until dishes are added)
-  const dishes = [];
+  // Fetch menu when active restaurant changes
+  useEffect(() => {
+    if (selectedRestaurantId) {
+      dispatch(fetchMenuByRestaurant(selectedRestaurantId));
+    }
+  }, [dispatch, selectedRestaurantId]);
+
+  const activeRestaurant = vendorRestaurants.find(
+    (r) => (r._id || r.id) === selectedRestaurantId
+  ) || vendorRestaurants[0] || null;
+
+  const currentRestaurantId = activeRestaurant?._id || activeRestaurant?.id || selectedRestaurantId || '';
 
   const categories = [
     'All',
@@ -53,12 +73,25 @@ export default function MenuManagement() {
     'Desserts'
   ];
 
-  const totalDishes = dishes.length;
-  const availableDishes = dishes.filter((d) => d.isAvailable).length;
-  const outOfStockDishes = totalDishes - availableDishes;
-  const totalCategories = dishes.length > 0
-    ? new Set(dishes.map((d) => d.category)).size
+  const totalDishes = menuItems.length;
+  const availableDishes = menuItems.filter((d) => d.isAvailable !== false).length;
+  const outOfStockDishes = menuItems.filter((d) => d.isAvailable === false).length;
+  const totalCategories = menuItems.length > 0
+    ? new Set(menuItems.map((d) => d.category || 'General')).size
     : 0;
+
+  // Filtered dishes
+  const filteredDishes = menuItems.filter((item) => {
+    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+    const matchesSearch = !searchQuery.trim() || (item.name || '').toLowerCase().includes(searchQuery.toLowerCase().trim());
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleDeleteDish = async (dishId, dishName) => {
+    if (window.confirm(`Are you sure you want to delete "${dishName}" from the menu?`)) {
+      await dispatch(deleteMenuItem(dishId));
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-fooddash-cream text-fooddash-charcoal">
@@ -76,19 +109,32 @@ export default function MenuManagement() {
                   Menu Management
                 </h1>
                 <p className="text-xs sm:text-sm text-fooddash-muted mt-1">
-                  Manage dishes, pricing, inventory, and categories for your restaurant.
+                  Manage dishes, pricing, inventory, and categories for {activeRestaurant?.name || 'your restaurant'}.
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 {/* Restaurant Dropdown Selector */}
-                <div className="relative">
-                  <div className="h-11 px-4 rounded-xl bg-white border border-[#E4DCD0] shadow-xs flex items-center gap-2.5 text-xs font-bold text-fooddash-charcoal">
-                    <Store size={15} className="text-primary" />
-                    <span>{activeRestaurant?.name || 'My Kitchen'}</span>
-                    <ChevronDown size={14} className="text-fooddash-muted" />
+                {vendorRestaurants.length > 0 && (
+                  <div className="relative">
+                    <select
+                      value={selectedRestaurantId}
+                      onChange={(e) => setSelectedRestaurantId(e.target.value)}
+                      className="h-11 pl-9 pr-8 rounded-xl bg-white border border-[#E4DCD0] shadow-xs text-xs font-bold text-fooddash-charcoal appearance-none outline-none focus:border-primary cursor-pointer"
+                    >
+                      {vendorRestaurants.map((r) => {
+                        const rId = r._id || r.id;
+                        return (
+                          <option key={rId} value={rId}>
+                            {r.name}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <Store size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-fooddash-muted pointer-events-none" />
                   </div>
-                </div>
+                )}
 
                 <Link
                   to={currentRestaurantId ? `/vendor/restaurants/${currentRestaurantId}/menu/create` : '/vendor/restaurants/create'}
@@ -159,7 +205,7 @@ export default function MenuManagement() {
               </div>
             </div>
 
-            {/* Menu Categories Pills Bar */}
+            {/* Menu Categories Pills & Search Bar */}
             <div className="bg-white rounded-2xl p-4 border border-[#E4DCD0]/80 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
@@ -183,8 +229,9 @@ export default function MenuManagement() {
                   <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fooddash-muted" />
                   <input
                     type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search dishes..."
-                    defaultValue=""
                     className="w-full h-9 pl-9 pr-4 rounded-xl bg-fooddash-cream/50 border border-[#E4DCD0] text-xs font-medium text-fooddash-charcoal outline-none focus:border-primary focus:bg-white transition-all"
                   />
                 </div>
@@ -192,7 +239,7 @@ export default function MenuManagement() {
             </div>
 
             {/* Empty State: No Dishes Yet */}
-            {dishes.length === 0 ? (
+            {menuItems.length === 0 ? (
               <div className="bg-white rounded-outer border border-[#E4DCD0]/80 p-12 text-center max-w-lg mx-auto my-6">
                 <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 shadow-inner">
                   <UtensilsCrossed size={32} />
@@ -211,10 +258,18 @@ export default function MenuManagement() {
                   <span>Add Menu Item</span>
                 </Link>
               </div>
+            ) : filteredDishes.length === 0 ? (
+              <div className="bg-white rounded-outer border border-[#E4DCD0]/80 p-8 text-center my-4">
+                <p className="text-xs text-fooddash-muted">No dishes matched your selected filter or search term.</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dishes.map((item) => (
-                  <MenuItemCard key={item.id} item={item} />
+                {filteredDishes.map((item) => (
+                  <MenuItemCard
+                    key={item._id || item.id}
+                    item={item}
+                    onDelete={handleDeleteDish}
+                  />
                 ))}
               </div>
             )}

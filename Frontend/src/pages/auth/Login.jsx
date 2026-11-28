@@ -23,8 +23,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    console.log("1. Form submitted");
 
     const result = await dispatch(
       loginUser({
@@ -32,8 +30,6 @@ export default function Login() {
         password
       })
     );
-
-    console.log(result)
 
     if(loginUser.fulfilled.match(result)) {
       if (role === 'vendor') {
@@ -59,6 +55,13 @@ export default function Login() {
 
       {/* Role Selector */}
       <AccountTypeSelector role={role} onChangeRole={setRole} />
+
+      {/* Error Banner */}
+      {error && (
+        <div className="w-full mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600 text-center">
+          <span>{typeof error === 'string' ? error : 'Login failed. Please check your credentials.'}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col w-full space-y-4">
         {/* Email */}

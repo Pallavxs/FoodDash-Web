@@ -1,5 +1,7 @@
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '../redux/slice/authSlice';
 import {
   LayoutDashboard,
   Store,
@@ -18,6 +20,17 @@ import {
  */
 export default function VendorSidebar({ user = { name: 'Pallav Shrivastava', email: 'vendor@fooddash.com' } }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleSignOut = async () => {
+    try {
+      await dispatch(logoutUser()).unwrap();
+    } catch {
+      // Ignore
+    } finally {
+      navigate('/login');
+    }
+  };
 
   const navLinkClass = ({ isActive }) =>
     `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
@@ -114,7 +127,7 @@ export default function VendorSidebar({ user = { name: 'Pallav Shrivastava', ema
 
         <button
           type="button"
-          onClick={() => navigate('/login')}
+          onClick={handleSignOut}
           className="flex items-center justify-center gap-2 text-xs font-bold text-fooddash-muted hover:text-primary py-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
         >
           <LogOut size={14} />

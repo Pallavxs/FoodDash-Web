@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import {
@@ -11,6 +12,17 @@ import {
 } from 'lucide-react';
 
 export default function OrderSuccess() {
+  const { id: paramId } = useParams();
+  const [searchParams] = useSearchParams();
+  const { currentOrder } = useSelector((state) => state.order || {});
+
+  const queryId = searchParams.get('id');
+  const candidateId = paramId || queryId || currentOrder?._id || currentOrder?.id;
+  const orderId =
+    candidateId && candidateId !== 'undefined' && candidateId !== 'null'
+      ? candidateId
+      : null;
+
   return (
     <div className="min-h-screen flex flex-col bg-fooddash-cream text-fooddash-charcoal">
       <Navbar />
@@ -30,16 +42,22 @@ export default function OrderSuccess() {
             Order Placed Successfully!
           </h1>
 
+          {orderId && (
+            <p className="text-xs font-mono font-bold text-fooddash-charcoal bg-stone-100 px-3 py-1.5 rounded-lg w-fit mx-auto mb-4 border border-stone-200">
+              Order ID: #{orderId.slice(-8).toUpperCase()}
+            </p>
+          )}
+
           <p className="text-sm sm:text-base text-fooddash-muted max-w-[480px] mx-auto mb-8 leading-relaxed">
-            Thank you for ordering with FoodDash. Your order has been placed successfully and is being prepared.
+            Thank you for ordering with FoodDash. Your kitchen partner has received your order and is preparing your meal.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
-              to="/orders"
+              to={orderId ? `/orders/${orderId}` : '/orders'}
               className="h-[50px] px-8 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-sm shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all flex items-center gap-2"
             >
-              <span>Track Order</span>
+              <span>{orderId ? 'Track Live Order' : 'View My Orders'}</span>
               <ArrowRight size={17} />
             </Link>
 

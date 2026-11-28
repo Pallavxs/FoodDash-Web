@@ -36,8 +36,14 @@ const OrderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["COD", "UPI", "Card"],
+      enum: ["COD", "UPI", "Card", "CARD"],
       default: "COD",
+    },
+
+    payment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+      default: null,
     },
 
     deliveryAddress: {
@@ -54,6 +60,23 @@ const OrderSchema = new mongoose.Schema(
         "delivered",
       ],
       default: "placed",
+    },
+
+    rider: {
+      name: String,
+      phone: String,
+      vehicle: String,
+      vehicleNumber: String,
+    },
+
+    restaurantLocation: {
+      lat: Number,
+      lng: Number,
+    },
+
+    deliveryLocation: {
+      lat: Number,
+      lng: Number,
     },
 
     riderLocation: {

@@ -15,7 +15,7 @@ export const createRestaurant = createAsyncThunk(
       );
     }
   }
-)
+);
 
 /**
  * Async thunk to fetch all restaurants without pagination.
@@ -89,20 +89,40 @@ export const getMyRestraunt = createAsyncThunk(
   }
 );
 
+export const fetchMyRestaurants = getMyRestraunt;
+
+/**
+ * Async thunk to edit an existing restaurant.
+ */
 export const editRestaurant = createAsyncThunk(
-  "restaurants/:id",
-  async (params, {rejectWithValue}) => {
+  "restaurants/edit",
+  async ({ id, data }, { rejectWithValue }) => {
     try {
-      return await restaurantService.editRestaurant();
+      return await restaurantService.editRestaurant({ id, data });
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to edit your restaurant"
-      )
+        error.response?.data?.message || "Failed to edit restaurant"
+      );
     }
   }
-)
+);
 
-export const fetchMyRestaurants = getMyRestraunt;
+/**
+ * Async thunk to delete a restaurant.
+ */
+export const deleteRestaurant = createAsyncThunk(
+  "restaurants/delete",
+  async (id, { rejectWithValue }) => {
+    try {
+      await restaurantService.deleteRestaurant(id);
+      return id;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to delete restaurant"
+      );
+    }
+  }
+);
 
 const initialState = {
   restaurants: [],
@@ -175,19 +195,21 @@ const restaurantSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Create Restaurant 
-
+      // Create Restaurant
       .addCase(createRestaurant.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-
       .addCase(createRestaurant.fulfilled, (state, action) => {
         state.loading = false;
-        state.selectedRestaurant = action.payload;
+        const newRest = action.payload;
+        if (newRest) {
+          state.selectedRestaurant = newRest;
+          state.myRestaurants = [newRest, ...state.myRestaurants.filter((r) => (r._id || r.id) !== (newRest._id || newRest.id))];
+          state.restaurants = [newRest, ...state.restaurants.filter((r) => (r._id || r.id) !== (newRest._id || newRest.id))];
+        }
         state.error = null;
       })
-
       .addCase(createRestaurant.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -203,11 +225,51 @@ const restaurantSlice = createSlice({
         const list = Array.isArray(action.payload)
           ? action.payload
           : (action.payload?.data ?? []);
-        state.restaurants = list;
         state.myRestaurants = list;
         state.error = null;
       })
       .addCase(getMyRestraunt.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Edit Restaurant
+      .addCase(editRestaurant.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(editRestaurant.fulfilled, (state, action) => {
+        state.loading = false;
+        const updated = action.payload;
+        if (updated) {
+          const id = updated._id || updated.id;
+          state.selectedRestaurant = updated;
+          state.myRestaurants = state.myRestaurants.map((r) => ((r._id || r.id) === id ? updated : r));
+          state.restaurants = state.restaurants.map((r) => ((r._id || r.id) === id ? updated : r));
+        }
+        state.error = null;
+      })
+      .addCase(editRestaurant.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Delete Restaurant
+      .addCase(deleteRestaurant.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteRestaurant.fulfilled, (state, action) => {
+        state.loading = false;
+        const deletedId = action.payload;
+        state.myRestaurants = state.myRestaurants.filter((r) => (r._id || r.id) !== deletedId);
+        state.restaurants = state.restaurants.filter((r) => (r._id || r.id) !== deletedId);
+        if (state.selectedRestaurant && (state.selectedRestaurant._id || state.selectedRestaurant.id) === deletedId) {
+          state.selectedRestaurant = null;
+        }
+        state.error = null;
+      })
+      .addCase(deleteRestaurant.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

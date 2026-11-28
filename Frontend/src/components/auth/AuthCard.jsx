@@ -39,13 +39,15 @@ export default function AuthCard({ mode = 'register', children }) {
 
           <h2 className="font-heading text-xl sm:text-2xl lg:text-4xl font-extrabold text-white leading-tight drop-shadow-md">
             {mode === 'register' ? (
-              <>
-                Craving something <span className="text-red-300 italic">fresh?</span>
-              </>
+              <span>
+                <span>Craving something </span>
+                <span className="text-red-300 italic">fresh?</span>
+              </span>
             ) : (
-              <>
-                Welcome back to <span className="text-red-300 italic">fresh flavors.</span>
-              </>
+              <span>
+                <span>Welcome back to </span>
+                <span className="text-red-300 italic">fresh flavors.</span>
+              </span>
             )}
           </h2>
 

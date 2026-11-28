@@ -4,8 +4,11 @@ import { User, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import AuthCard from '../../components/auth/AuthCard';
 import AuthHeader from '../../components/auth/AuthHeader';
 import AccountTypeSelector from '../../components/auth/AccountTypeSelector';
+import { useDispatch } from "react-redux"
+import { registerUser } from '../../redux/slice/authSlice'
 
 export default function Register() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [role, setRole] = useState('customer');
   const [name, setName] = useState('');
@@ -14,14 +17,29 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // UI prototype: navigate to login or dashboard
-    if (role === 'vendor') {
-      navigate('/vendor');
-    } else {
-      navigate('/dashboard');
-    }
+  
+      try {
+        const result = await dispatch(
+        registerUser({
+          name, email, password, confirmPassword, role
+        })
+      ).unwrap();
+
+      if(registerUser.fulfilled.match(result)){
+        if (role === 'vendor') {
+          navigate('/vendor');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+      
+      } catch (error) {
+        console.error("Registration failed:", error);
+      }
+
+    
   };
 
   return (

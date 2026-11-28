@@ -5,6 +5,8 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import VendorSidebar from '../../components/VendorSidebar';
 import { getMyRestraunt } from '../../redux/slice/restaurantSlice';
+import { fetchMenuByRestaurant } from '../../redux/slice/menuSlice';
+import { fetchVendorOrders } from '../../redux/slice/orderSlice';
 import {
   PlusCircle,
   Store,
@@ -30,21 +32,32 @@ export default function VendorDashboard() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { myRestaurants, restaurants, loading } = useSelector((state) => state.restaurants);
+  const { items: menuItems = [] } = useSelector((state) => state.menu);
+  const { vendorOrders = [] } = useSelector((state) => state.order);
 
   useEffect(() => {
     dispatch(getMyRestraunt());
+    dispatch(fetchVendorOrders());
   }, [dispatch]);
 
   // Authenticated vendor's actual restaurants
-  const vendorRestaurants = Array.isArray(myRestaurants) && myRestaurants.length > 0
-    ? myRestaurants
-    : (Array.isArray(restaurants) ? restaurants : []);
+  const vendorRestaurants = Array.isArray(myRestaurants) ? myRestaurants : [];
+
+  const activeRestaurant = vendorRestaurants[0] || null;
+
+  useEffect(() => {
+    if (activeRestaurant?._id || activeRestaurant?.id) {
+      dispatch(fetchMenuByRestaurant(activeRestaurant._id || activeRestaurant.id));
+    }
+  }, [dispatch, activeRestaurant?._id, activeRestaurant?.id]);
 
   // Real business values derived from application state
   const restaurantsCount = vendorRestaurants.length;
-  const activeDishesCount = 0; // Dishes will populate once connected to Menu endpoints
-  const ordersToday = 0; // Real orders count from order records
-  const revenueToday = 0; // Real revenue sum
+  const activeDishesCount = menuItems.filter((i) => i.isAvailable !== false).length;
+  const ordersToday = vendorOrders.length;
+  const revenueToday = vendorOrders
+    .filter((o) => o.status === 'delivered')
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
   // Dynamic statistics configuration
   const metrics = [
@@ -69,7 +82,7 @@ export default function VendorDashboard() {
     {
       title: 'Orders Today',
       value: ordersToday,
-      subtext: ordersToday === 0 ? 'No active orders' : `${ordersToday} orders today`,
+      subtext: ordersToday === 0 ? 'No active orders' : `${ordersToday} orders total`,
       icon: ShoppingBag,
       bg: 'bg-blue-50',
       iconColor: 'text-blue-600'
@@ -77,15 +90,14 @@ export default function VendorDashboard() {
     {
       title: 'Revenue Today',
       value: `₹${revenueToday.toLocaleString('en-IN')}`,
-      subtext: revenueToday === 0 ? 'No revenue recorded' : 'Daily earnings',
+      subtext: revenueToday === 0 ? 'No revenue recorded' : 'Total earnings',
       icon: IndianRupee,
       bg: 'bg-emerald-50',
       iconColor: 'text-emerald-600'
     }
   ];
 
-  // Placeholder for real incoming orders array
-  const recentOrders = [];
+  const recentOrders = vendorOrders.slice(0, 5);
 
   const displayName = user?.name || 'Partner';
 
@@ -399,31 +411,40 @@ export default function VendorDashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E4DCD0]/60">
-                      {recentOrders.map((order) => (
-                        <tr key={order.id} className="hover:bg-fooddash-cream/40 transition-colors">
-                          <td className="py-3.5 px-3 font-bold text-fooddash-charcoal">{order.id}</td>
-                          <td className="py-3.5 px-3">
-                            <span className="font-semibold text-fooddash-charcoal block">{order.customer}</span>
-                            <span className="text-[11px] text-fooddash-muted">{order.time}</span>
-                          </td>
-                          <td className="py-3.5 px-3 text-fooddash-body max-w-[220px] truncate">{order.items}</td>
-                          <td className="py-3.5 px-3 font-medium text-stone-600">{order.restaurant}</td>
-                          <td className="py-3.5 px-3 font-extrabold text-fooddash-charcoal">{order.total}</td>
-                          <td className="py-3.5 px-3">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${order.statusColor}`}>
-                              {order.status}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-3 text-right">
-                            <Link
-                              to="/vendor/orders"
-                              className="font-bold text-primary hover:underline text-xs"
-                            >
-                              Manage
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
+                      {recentOrders.map((order) => {
+                        const orderId = order._id || order.id;
+                        const shortId = `#${orderId.slice(-6).toUpperCase()}`;
+                        const customerName = order.user?.name || 'Customer';
+                        const timeStr = new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        const itemsSummary = order.items?.map((i) => `${i.quantity}x ${i.menuItem?.name || i.name || 'Item'}`).join(', ') || 'Dishes';
+                        const restaurantName = order.restaurant?.name || 'Kitchen';
+
+                        return (
+                          <tr key={orderId} className="hover:bg-fooddash-cream/40 transition-colors">
+                            <td className="py-3.5 px-3 font-bold text-fooddash-charcoal">{shortId}</td>
+                            <td className="py-3.5 px-3">
+                              <span className="font-semibold text-fooddash-charcoal block">{customerName}</span>
+                              <span className="text-[11px] text-fooddash-muted">{timeStr}</span>
+                            </td>
+                            <td className="py-3.5 px-3 text-fooddash-body max-w-[220px] truncate">{itemsSummary}</td>
+                            <td className="py-3.5 px-3 font-medium text-stone-600">{restaurantName}</td>
+                            <td className="py-3.5 px-3 font-extrabold text-fooddash-charcoal">₹{order.totalAmount}</td>
+                            <td className="py-3.5 px-3">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-700 border border-stone-200">
+                                {order.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 text-right">
+                              <Link
+                                to="/vendor/orders"
+                                className="font-bold text-primary hover:underline text-xs"
+                              >
+                                Manage
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

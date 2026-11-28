@@ -13,27 +13,20 @@ export async function getRestaurants(req, res) {
 
 export async function getMyRestraunt(req, res) {
   try {
-    const restarunt = await Restaurant.find({
-      owner : req.user.id
-    })
-  
-    if (!restarunt || restarunt.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No restaurants found for this user",
-      })
-    }
+    const userId = req.user?._id || req.user?.id;
+    const restaurants = await Restaurant.find({
+      owner: userId
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
-      sucess: true,
-      data: restarunt,
+      success: true,
+      data: restaurants || [],
     });
-    
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({
       message: "Internal Server Error"
-    })
+    });
   }
 }
 
@@ -100,17 +93,56 @@ export async function createRestaurant(req, res) {
       return res.status(400).json({ message: "Restaurant already exists" });
     }
 
-    const newRestaurant = new Restaurant({
-      owner: req.user.id,
+    // Parse coordinates if provided
+    let coordinates = null;
+    if (req.body.coordinates) {
+      if (typeof req.body.coordinates === "string") {
+        try {
+          coordinates = JSON.parse(req.body.coordinates);
+        } catch {
+          coordinates = null;
+        }
+      } else if (typeof req.body.coordinates === "object") {
+        coordinates = req.body.coordinates;
+      }
+    } else if (req.body["coordinates[lat]"] !== undefined && req.body["coordinates[lng]"] !== undefined) {
+      coordinates = {
+        lat: req.body["coordinates[lat]"],
+        lng: req.body["coordinates[lng]"],
+      };
+    } else if (req.body.lat !== undefined && req.body.lng !== undefined) {
+      coordinates = {
+        lat: req.body.lat,
+        lng: req.body.lng,
+      };
+    }
+
+    let parsedCoordinates = undefined;
+    if (coordinates && coordinates.lat != null && coordinates.lng != null) {
+      const lat = Number(coordinates.lat);
+      const lng = Number(coordinates.lng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        parsedCoordinates = { lat, lng };
+      }
+    }
+
+    const restaurantData = {
+      owner: req.user.id || req.user._id,
       name,
       cuisine,
       location,
       Openinghours,
       image: imageUrl,
-      deliveryTime,
+      deliveryTime: Number(deliveryTime) || 30,
       description,
-      rating,
-    });
+      rating: rating || 0,
+    };
+
+    if (parsedCoordinates) {
+      restaurantData.coordinates = parsedCoordinates;
+    }
+
+    const newRestaurant = new Restaurant(restaurantData);
 
     const savedRestaurant = await newRestaurant.save();
 
@@ -152,10 +184,10 @@ export async function editRestaurant(req, res) {
       });
     }
 
-    if (
-      restaurant.owner.toString() !== req.user.id &&
-      req.user.role !== "admin"
-    ) {
+    const userId = (req.user?._id || req.user?.id || "").toString();
+    const ownerId = (restaurant.owner || "").toString();
+
+    if (ownerId !== userId && req.user?.role !== "admin") {
       return res.status(403).json({
         message: "Access denied",
       });
@@ -164,25 +196,47 @@ export async function editRestaurant(req, res) {
     const updateData = {};
 
     if (name) updateData.name = name;
-
     if (cuisine) updateData.cuisine = cuisine;
-
     if (location) updateData.location = location;
-
-    if (deliveryTime) {
-      updateData.deliveryTime = deliveryTime;
-    }
-
-    if(description) {
-      updateData.description = description;
-    }
-
-    if (Openinghours) {
-      updateData.Openinghours = Openinghours;
-    }
+    if (deliveryTime) updateData.deliveryTime = Number(deliveryTime);
+    if (description) updateData.description = description;
+    if (Openinghours) updateData.Openinghours = Openinghours;
+    if (req.body.rating !== undefined && req.body.rating !== "") updateData.rating = req.body.rating;
 
     if (req.file) {
       updateData.image = req.file.path;
+    }
+
+    // Parse coordinates if provided
+    let coordinates = null;
+    if (req.body.coordinates) {
+      if (typeof req.body.coordinates === "string") {
+        try {
+          coordinates = JSON.parse(req.body.coordinates);
+        } catch {
+          coordinates = null;
+        }
+      } else if (typeof req.body.coordinates === "object") {
+        coordinates = req.body.coordinates;
+      }
+    } else if (req.body["coordinates[lat]"] !== undefined && req.body["coordinates[lng]"] !== undefined) {
+      coordinates = {
+        lat: req.body["coordinates[lat]"],
+        lng: req.body["coordinates[lng]"],
+      };
+    } else if (req.body.lat !== undefined && req.body.lng !== undefined) {
+      coordinates = {
+        lat: req.body.lat,
+        lng: req.body.lng,
+      };
+    }
+
+    if (coordinates && coordinates.lat != null && coordinates.lng != null) {
+      const lat = Number(coordinates.lat);
+      const lng = Number(coordinates.lng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        updateData.coordinates = { lat, lng };
+      }
     }
 
     const updatedRestaurant =
@@ -225,10 +279,10 @@ export async function deleteRestaurant(req, res) {
       });
     }
 
-    if (
-      restaurant.owner.toString() !== req.user.id &&
-      req.user.role !== "admin"
-    ) {
+    const userId = (req.user?._id || req.user?.id || "").toString();
+    const ownerId = (restaurant.owner || "").toString();
+
+    if (ownerId !== userId && req.user?.role !== "admin") {
       return res.status(403).json({
         message: "Access denied",
       });

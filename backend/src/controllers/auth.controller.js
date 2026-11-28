@@ -101,9 +101,9 @@ export async function logout(req, res) {
   try {
     const token = req.cookies.accessToken || req.cookies.token;
 
-    res.clearCookie("accessToken");
-    res.clearCookie("token");
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", { path: "/" });
+    res.clearCookie("token", { path: "/" });
+    res.clearCookie("refreshToken", { path: "/" });
 
     if (!token) {
       return res.status(200).json({ message: "Already logged out" });

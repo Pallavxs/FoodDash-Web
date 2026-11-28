@@ -24,7 +24,7 @@ app.use("/uploads", express.static("uploads"));
 
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
-app.use("/api/menus", menuRoute);
+app.use("/api/menu", menuRoute);
 app.use("/api/orders", orderRoute);
 
 

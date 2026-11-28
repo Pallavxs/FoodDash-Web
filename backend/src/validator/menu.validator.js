@@ -24,4 +24,20 @@ export const validateMenu = [
         .isFloat({ gt: 0 })
         .withMessage("Price must be a positive number"),
     validateError,
-]
+];
+
+export const validateUpdateMenu = [
+    body("name")
+        .optional()
+        .notEmpty()
+        .withMessage("Menu item name cannot be empty"),
+    body("description")
+        .optional()
+        .notEmpty()
+        .withMessage("Menu item description cannot be empty"),
+    body("price")
+        .optional()
+        .isFloat({ gt: 0 })
+        .withMessage("Price must be a positive number"),
+    validateError,
+];

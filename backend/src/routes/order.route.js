@@ -2,6 +2,7 @@ import express from "express";
 import {
   createOrder,
   getOrders,
+  getVendorOrders,
   getOrderById,
   updateOrderStatus,
   updateRiderLocation,
@@ -12,14 +13,16 @@ import { authorizeRoles } from "../middleware/role.middleware.js";
 
 const router = express.Router();
 
-router.post("/create", authenticaUser,  authorizeRoles("customer"), validateOrder, createOrder);
+router.post("/create", authenticaUser, validateOrder, createOrder);
+
+router.get("/restaurant", authenticaUser, authorizeRoles("vendor", "admin"), getVendorOrders);
 
 router.get("/", authenticaUser, getOrders);
 
 router.get("/:id", authenticaUser, getOrderById);
 
-router.patch("/:id/status", authenticaUser,  authorizeRoles("vendor", "admin"), updateOrderStatus );
+router.patch("/:id/status", authenticaUser, updateOrderStatus);
 
-router.patch("/:id/location", authenticaUser, authorizeRoles("rider", "admin"), updateRiderLocation);
+router.patch("/:id/location", authenticaUser, updateRiderLocation);
 
 export default router;

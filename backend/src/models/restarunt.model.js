@@ -6,7 +6,7 @@ const restaurantSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    
+
     name: {
       type: String,
       required: true,
@@ -26,6 +26,11 @@ const restaurantSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+
+    coordinates: {
+      lat: Number,
+      lng: Number,
     },
 
     rating: {

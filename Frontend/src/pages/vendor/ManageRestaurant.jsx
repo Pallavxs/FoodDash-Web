@@ -7,16 +7,14 @@ import VendorSidebar from '../../components/VendorSidebar';
 import PageHeader from '../../components/PageHeader';
 import MenuItemCard from '../../components/MenuItemCard';
 import { getMyRestraunt } from '../../redux/slice/restaurantSlice';
+import { fetchMenuByRestaurant } from '../../redux/slice/menuSlice';
 import {
   PlusCircle,
   Edit3,
   UtensilsCrossed,
   Star,
   Clock,
-  MapPin,
-  ExternalLink,
-  Store,
-  ChevronRight
+  ExternalLink
 } from 'lucide-react';
 
 /**
@@ -29,10 +27,7 @@ export default function ManageRestaurant() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { myRestaurants, restaurants } = useSelector((state) => state.restaurants);
-
-  useEffect(() => {
-    dispatch(getMyRestraunt());
-  }, [dispatch]);
+  const { items: menuItems = [] } = useSelector((state) => state.menu);
 
   const allRestaurants = Array.isArray(myRestaurants) && myRestaurants.length > 0
     ? myRestaurants
@@ -42,6 +37,18 @@ export default function ManageRestaurant() {
     (r) => (r._id || r.id) === id
   ) || allRestaurants[0] || null;
 
+  const currentRestaurantId = restaurant?._id || restaurant?.id || id;
+
+  useEffect(() => {
+    dispatch(getMyRestraunt());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (currentRestaurantId) {
+      dispatch(fetchMenuByRestaurant(currentRestaurantId));
+    }
+  }, [dispatch, currentRestaurantId]);
+
   const restaurantName = restaurant?.name || 'Restaurant';
   const cuisine = restaurant?.cuisine || 'Cuisine not specified';
   const location = restaurant?.location || 'Location not specified';
@@ -49,11 +56,13 @@ export default function ManageRestaurant() {
   const deliveryTime = restaurant?.deliveryTime ? `${restaurant.deliveryTime} mins` : '30 mins';
   const image = restaurant?.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80';
 
-  // Real dishes array from backend (empty until dishes endpoint is populated)
-  const starters = [];
-  const mainCourses = [];
-  const desserts = [];
-  const totalDishesCount = starters.length + mainCourses.length + desserts.length;
+  const starters = menuItems.filter((i) => i.category === 'Starters');
+  const mainCourses = menuItems.filter((i) => i.category === 'Main Course');
+  const dessertsAndOthers = menuItems.filter((i) => i.category !== 'Starters' && i.category !== 'Main Course');
+  const totalDishesCount = menuItems.length;
+  const activeCategoriesCount = menuItems.length > 0
+    ? new Set(menuItems.map((i) => i.category || 'General')).size
+    : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-fooddash-cream text-fooddash-charcoal">
@@ -113,7 +122,7 @@ export default function ManageRestaurant() {
                   <div className="flex items-center gap-2.5">
                     {restaurant && (
                       <Link
-                        to={`/vendor/restaurants/${restaurant._id || restaurant.id}/edit`}
+                        to={`/vendor/restaurants/${currentRestaurantId}/edit`}
                         className="h-10 px-4 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-1.5"
                       >
                         <Edit3 size={14} />
@@ -122,7 +131,7 @@ export default function ManageRestaurant() {
                     )}
 
                     <Link
-                      to="/vendor/menu"
+                      to={`/vendor/restaurants/${currentRestaurantId}/menu`}
                       className="h-10 px-4 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-xs shadow-button hover:shadow-button-hover transition-all flex items-center gap-1.5"
                     >
                       <UtensilsCrossed size={14} />
@@ -131,7 +140,7 @@ export default function ManageRestaurant() {
 
                     {restaurant && (
                       <Link
-                        to={`/restaurants/${restaurant._id || restaurant.id}`}
+                        to={`/restaurants/${currentRestaurantId}`}
                         className="h-10 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-1.5"
                         title="Customer Live View"
                       >
@@ -152,7 +161,7 @@ export default function ManageRestaurant() {
                   <div className="w-px h-6 bg-[#E4DCD0]" />
                   <div>
                     <span className="text-fooddash-muted block">Active Categories</span>
-                    <span className="font-extrabold text-fooddash-charcoal text-sm">0 categories</span>
+                    <span className="font-extrabold text-fooddash-charcoal text-sm">{activeCategoriesCount} categories</span>
                   </div>
                   <div className="w-px h-6 bg-[#E4DCD0]" />
                   <div>
@@ -162,7 +171,7 @@ export default function ManageRestaurant() {
                 </div>
 
                 <Link
-                  to={restaurant ? `/vendor/restaurants/${restaurant._id || restaurant.id}/menu/create` : '/vendor/menu/create'}
+                  to={currentRestaurantId ? `/vendor/restaurants/${currentRestaurantId}/menu/create` : '/vendor/restaurants/create'}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
                 >
                   <PlusCircle size={15} />
@@ -184,7 +193,7 @@ export default function ManageRestaurant() {
                   This kitchen currently has no dishes listed. Add your signature starters, main courses, and desserts to make them available to customers.
                 </p>
                 <Link
-                  to={restaurant ? `/vendor/restaurants/${restaurant._id || restaurant.id}/menu/create` : '/vendor/menu/create'}
+                  to={currentRestaurantId ? `/vendor/restaurants/${currentRestaurantId}/menu/create` : '/vendor/restaurants/create'}
                   className="h-11 px-6 rounded-full bg-primary hover:bg-primary-dark text-white font-bold text-xs shadow-button hover:shadow-button-hover transition-all flex items-center gap-2"
                 >
                   <PlusCircle size={16} />
@@ -207,7 +216,7 @@ export default function ManageRestaurant() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {starters.map((item) => (
-                        <MenuItemCard key={item.id} item={item} />
+                        <MenuItemCard key={item._id || item.id} item={item} />
                       ))}
                     </div>
                   </div>
@@ -227,27 +236,27 @@ export default function ManageRestaurant() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {mainCourses.map((item) => (
-                        <MenuItemCard key={item.id} item={item} />
+                        <MenuItemCard key={item._id || item.id} item={item} />
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* CATEGORY 3: DESSERTS */}
-                {desserts.length > 0 && (
+                {/* CATEGORY 3: DESSERTS & OTHER */}
+                {dessertsAndOthers.length > 0 && (
                   <div className="space-y-4 pt-4">
                     <div className="flex items-center justify-between pb-2 border-b border-[#E4DCD0]">
                       <div>
                         <h3 className="font-heading font-extrabold text-lg text-fooddash-charcoal uppercase tracking-wider flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                          <span>Desserts & Beverages</span>
+                          <span>Desserts, Beverages & Others</span>
                         </h3>
-                        <p className="text-xs text-fooddash-muted">Sweet delicacies and drinks ({desserts.length})</p>
+                        <p className="text-xs text-fooddash-muted">Specialties, treats and drinks ({dessertsAndOthers.length})</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {desserts.map((item) => (
-                        <MenuItemCard key={item.id} item={item} />
+                      {dessertsAndOthers.map((item) => (
+                        <MenuItemCard key={item._id || item.id} item={item} />
                       ))}
                     </div>
                   </div>

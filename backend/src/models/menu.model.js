@@ -28,6 +28,17 @@ const MenuSchema = new mongoose.Schema(
       required: false,
       trim: true,
     },
+
+    category: {
+      type: String,
+      default: "Main Course",
+      trim: true,
+    },
+
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

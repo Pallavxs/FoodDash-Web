@@ -4,12 +4,10 @@ import Menu from "../models/menu.model.js";
 
 export const getMenu = async (req, res) => {
   try {
-    const menu = await Menu.find();
-
+    const menu = await Menu.find().populate("restaurant").sort({ createdAt: -1 });
     res.status(200).json(menu);
   } catch (error) {
     console.log("GET MENU ERROR:", error);
-
     res.status(500).json({
       message: "Failed to fetch menu",
     });
@@ -20,6 +18,10 @@ export const getMenuByRestaurantId = async (req, res) => {
   try {
     const { restaurantId } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res.status(400).json({ message: "Invalid restaurant id" });
+    }
+
     const menu = await Menu.find({
       restaurant: restaurantId,
     });
@@ -27,7 +29,6 @@ export const getMenuByRestaurantId = async (req, res) => {
     res.status(200).json(menu);
   } catch (error) {
     console.log("GET RESTAURANT MENU ERROR:", error);
-
     res.status(500).json({
       message: "Failed to fetch restaurant menu",
     });
@@ -36,18 +37,22 @@ export const getMenuByRestaurantId = async (req, res) => {
 
 export const createMenu = async (req, res) => {
   try {
-    const { restaurant, name, description, price } = req.body;
+    const { restaurant, name, description, price, category, availability, isAvailable } = req.body;
 
     let imageUrl = req.file ? req.file.path : (req.body.image || "");
 
     if (!imageUrl) {
-      return res.status(400).json({ message: "Restaurant image is required" });
+      return res.status(400).json({ message: "Dish image is required" });
     }
 
     if (!restaurant || !name || !description || !price) {
       return res.status(400).json({
         message: "All fields are required",
       });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(restaurant)) {
+      return res.status(400).json({ message: "Invalid restaurant id" });
     }
 
     const restaurantExists = await Restaurant.findById(restaurant);
@@ -58,24 +63,34 @@ export const createMenu = async (req, res) => {
       });
     }
 
+    const userId = (req.user?._id || req.user?.id || "").toString();
+    const ownerId = (restaurantExists.owner || "").toString();
+
+    if (ownerId !== userId && req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied. You do not own this restaurant.",
+      });
+    }
+
+    const availableFlag = availability !== undefined ? Boolean(availability) : (isAvailable !== undefined ? Boolean(isAvailable) : true);
 
     const newMenu = new Menu({
       restaurant,
       name,
       description,
-      price,
+      price: Number(price),
+      category: category || "Main Course",
+      isAvailable: availableFlag,
       image: imageUrl,
     });
 
     const savedMenu = await newMenu.save();
-
     res.status(201).json(savedMenu);
 
   } catch (error) {
     console.error("CREATE MENU ERROR:", error);
-
     res.status(500).json({
-      message: "Failed to create menu",
+      message: "Failed to create menu item",
       error: error.message,
     });
   }
@@ -108,12 +123,36 @@ export const updateMenu = async (req, res) => {
       });
     }
 
-    const updatedData = {
-      ...req.body,
-    };
+    const existingMenu = await Menu.findById(id);
+    if (!existingMenu) {
+      return res.status(404).json({
+        message: "Menu item not found",
+      });
+    }
+
+    // Verify ownership of the associated restaurant
+    const restaurant = await Restaurant.findById(existingMenu.restaurant);
+    const userId = (req.user?._id || req.user?.id || "").toString();
+    const ownerId = (restaurant?.owner || "").toString();
+
+    if (ownerId !== userId && req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied. You do not own this restaurant.",
+      });
+    }
+
+    const updatedData = { ...req.body };
 
     if (req.file) {
       updatedData.image = req.file.path;
+    }
+
+    if (updatedData.price !== undefined) {
+      updatedData.price = Number(updatedData.price);
+    }
+
+    if (updatedData.availability !== undefined) {
+      updatedData.isAvailable = Boolean(updatedData.availability);
     }
 
     const updatedMenu = await Menu.findByIdAndUpdate(
@@ -125,19 +164,13 @@ export const updateMenu = async (req, res) => {
       }
     );
 
-    if (!updatedMenu) {
-      return res.status(404).json({
-        message: "Menu item not found",
-      });
-    }
-
     res.status(200).json(updatedMenu);
 
   } catch (error) {
     console.error("UPDATE MENU ERROR:", error);
-
     res.status(500).json({
-      message: "Failed to update menu",
+      message: "Failed to update menu item",
+      error: error.message,
     });
   }
 };
@@ -148,13 +181,27 @@ export const deleteMenu = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid menu id" });
     }
-    const deletedMenu = await Menu.findByIdAndDelete(id);
-    if (!deletedMenu) {
+
+    const existingMenu = await Menu.findById(id);
+    if (!existingMenu) {
       return res.status(404).json({ message: "Menu item not found" });
     }
-    res.status(200).json({ message: "Menu item deleted" });
+
+    // Verify ownership
+    const restaurant = await Restaurant.findById(existingMenu.restaurant);
+    const userId = (req.user?._id || req.user?.id || "").toString();
+    const ownerId = (restaurant?.owner || "").toString();
+
+    if (ownerId !== userId && req.user?.role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied. You do not own this restaurant.",
+      });
+    }
+
+    await Menu.findByIdAndDelete(id);
+    res.status(200).json({ message: "Menu item deleted successfully" });
   } catch (error) {
     console.error("DELETE MENU ERROR:", error);
-    res.status(500).json({ message: "Failed to delete menu" });
+    res.status(500).json({ message: "Failed to delete menu item" });
   }
 };
