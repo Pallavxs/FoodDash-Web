@@ -11,6 +11,7 @@ import cors from 'cors'
 const app = express();
 
 const allowedOrigins = [
+    "http://localhost:5173",
     "http://localhost:3000",
     process.env.FRONTEND_URL,
 ].filter(Boolean);
@@ -37,6 +38,15 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
 app.use("/uploads", express.static("uploads"));
+
+// Health check routes for Railway deployment & uptime monitoring
+app.get("/api/health", (req, res) => {
+    res.status(200).json({ status: "ok", uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
 app.use("/api/auth", authRoute);
 app.use("/api/restaurants", restaurantRoute);
 app.use("/api/menu", menuRoute);
